@@ -1,7 +1,12 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill_test/flutter_quill_test.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'common/utils/quill_test_app.dart';
+import 'editor/editor_config_utils.dart';
 
 void main() {
   group('Bug fix', () {
@@ -16,12 +21,14 @@ void main() {
 
         await tester.pumpWidget(
           MaterialApp(
+            localizationsDelegates:
+                FlutterQuillLocalizations.localizationsDelegates,
             home: Scaffold(
               body: QuillSimpleToolbar(
-                configurations: QuillSimpleToolbarConfigurations(
-                  controller: controller,
+                controller: controller,
+                config: const QuillSimpleToolbarConfig(
                   showRedo: false,
-                  customButtons: const [
+                  customButtons: [
                     QuillToolbarCustomButtonOptions(
                       tooltip: tooltip,
                     )
@@ -38,19 +45,13 @@ void main() {
           matchRoot: true,
         );
         expect(builtinFinder, findsOneWidget);
-        // final builtinButton =
-        //     builtinFinder.evaluate().first.widget as QuillToolbarIconButton;
 
         final customFinder = find.descendant(
-            of: find.byType(QuillToolbar),
+            of: find.byType(QuillSimpleToolbar),
             matching: find.byWidgetPredicate((widget) =>
                 widget is QuillToolbarIconButton && widget.tooltip == tooltip),
             matchRoot: true);
         expect(customFinder, findsOneWidget);
-        // final customButton =
-        //     customFinder.evaluate().first.widget as QuillToolbarIconButton;
-
-        // expect(customButton.fillColor, equals(builtinButton.fillColor));
       });
     });
 
@@ -61,11 +62,7 @@ void main() {
       setUp(() {
         controller = QuillController.basic();
         editor = QuillEditor.basic(
-          // ignore: avoid_redundant_argument_values
-          configurations: QuillEditorConfigurations(
-            controller: controller,
-            // ignore: avoid_redundant_argument_values
-          ),
+          controller: controller,
         );
       });
 
@@ -123,9 +120,135 @@ void main() {
         controller.formatSelection(Attribute.unchecked);
         editor.focusNode.unfocus();
         await tester.pump();
-        await tester.tap(find.byType(QuillEditorCheckboxPoint));
+        await tester.tap(find.byType(QuillCheckboxPoint));
         expect(tester.takeException(), isNull);
       });
     });
   });
+
+  group('1742 - Disable context menu after selection for desktop platform', () {
+    late QuillController controller;
+
+    setUp(() {
+      controller = QuillController.basic();
+    });
+
+    tearDown(() {
+      controller.dispose();
+    });
+
+    for (final device in [PointerDeviceKind.mouse, PointerDeviceKind.touch]) {
+      testWidgets(
+          '1742 - Disable context menu after selection for desktop platform $device',
+          (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: QuillEditor(
+              focusNode: FocusNode(),
+              scrollController: ScrollController(),
+              controller: controller,
+              config: const QuillEditorConfig(
+                autoFocus: true,
+                expands: true,
+              ),
+            ),
+          ),
+        );
+        if (device == PointerDeviceKind.mouse) {
+          expect(find.byType(AdaptiveTextSelectionToolbar), findsNothing);
+          // Long press to show menu
+          await tester.longPress(find.byType(QuillEditor), kind: device);
+          await tester.pumpAndSettle();
+
+          // Verify custom widget not shows
+          expect(find.byType(AdaptiveTextSelectionToolbar), findsNothing);
+
+          await tester.tap(find.byType(QuillEditor),
+              buttons: kSecondaryButton, kind: device);
+          await tester.pumpAndSettle();
+          while (find.byType(AdaptiveTextSelectionToolbar).evaluate().isEmpty) {
+            await tester.pumpAndSettle();
+          }
+
+          // Verify custom widget shows
+          expect(find.byType(AdaptiveTextSelectionToolbar), findsAny);
+        } else {
+          // Long press to show menu
+          await tester.longPress(find.byType(QuillEditor), kind: device);
+          await tester.pumpAndSettle();
+
+          // Verify custom widget shows
+          expect(find.byType(AdaptiveTextSelectionToolbar), findsAny);
+        }
+      });
+    }
+  });
+  group(
+    "2521 - QuillEditor doesn't respect the system keyboard brightness by default on iOS",
+    () {
+      test('keyboardAppearance defaults to null', () {
+        expect(const QuillEditorConfig().keyboardAppearance, null);
+        expect(
+          createFakeRawEditorConfig().keyboardAppearance,
+          null,
+        );
+      });
+
+      testWidgets('uses the keyboardAppearance from the config if not null',
+          (tester) async {
+        for (final keyboardAppearanceValue in {
+          Brightness.dark,
+          Brightness.light
+        }) {
+          final key = GlobalKey<QuillRawEditorState>();
+          await tester.pumpWidget(
+            QuillTestApp.home(
+              QuillRawEditor(
+                key: key,
+                config: createFakeRawEditorConfig(
+                    keyboardAppearance: keyboardAppearanceValue),
+                controller: QuillController.basic(),
+              ),
+            ),
+          );
+
+          final keyboardAppearance =
+              key.currentState?.createKeyboardAppearance();
+
+          expect(keyboardAppearance, keyboardAppearanceValue);
+        }
+      });
+
+      testWidgets(
+          'uses the keyboardAppearance from the ThemeData if not declared in the config',
+          (tester) async {
+        for (final keyboardAppearanceValue in {
+          Brightness.dark,
+          Brightness.light
+        }) {
+          final key = GlobalKey<QuillRawEditorState>();
+          await tester.pumpWidget(
+            QuillTestApp.home(
+              CupertinoTheme(
+                data: CupertinoThemeData(brightness: keyboardAppearanceValue),
+                child: Theme(
+                  data: ThemeData(brightness: keyboardAppearanceValue),
+                  child: QuillRawEditor(
+                    key: key,
+                    config: createFakeRawEditorConfig(keyboardAppearance: null),
+                    controller: QuillController.basic(),
+                  ),
+                ),
+              ),
+            ),
+          );
+
+          final keyboardAppearance =
+              key.currentState?.createKeyboardAppearance();
+
+          expect(keyboardAppearance, keyboardAppearanceValue);
+        }
+      });
+    },
+  );
 }
