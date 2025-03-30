@@ -207,6 +207,7 @@ class DefaultStyles {
     this.sizeLarge,
     this.sizeHuge,
     this.palette,
+    this.qaBlock,
   });
 
   final DefaultTextBlockStyle? h1;
@@ -242,6 +243,7 @@ class DefaultStyles {
   final DefaultTextBlockStyle? indent;
   final DefaultTextBlockStyle? align;
   final DefaultTextBlockStyle? leading;
+  final DefaultTextBlockStyle? qaBlock;
 
   /// Custom palette of colors
   final Map<String, Color>? palette;
@@ -416,6 +418,7 @@ class DefaultStyles {
           fontWeight: FontWeight.w500,
         ),
       ),
+
       link: TextStyle(
         color: themeData.colorScheme.secondary,
         decoration: TextDecoration.underline,
@@ -449,6 +452,23 @@ class DefaultStyles {
           ),
         ),
       ),
+
+      qaBlock: DefaultTextBlockStyle(
+        baseStyle.copyWith(
+          fontSize: 16,
+          color: themeData.colorScheme.onSurface.withOpacity(0.8),
+          fontWeight: FontWeight.normal,
+        ),
+        const HorizontalSpacing(0, 0),
+        const VerticalSpacing(8, 8),
+        const VerticalSpacing(0, 0),
+        BoxDecoration(
+          border: Border.all(color: themeData.colorScheme.onSurface.withOpacity(0.2)),
+          borderRadius: BorderRadius.circular(8.0),
+          color: themeData.colorScheme.surface.withOpacity(0.05),
+        ),
+      ),
+
       code: DefaultTextBlockStyle(
           TextStyle(
             color: Colors.blue.shade900.withValues(alpha: 0.9),

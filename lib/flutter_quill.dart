@@ -39,3 +39,4 @@ export 'src/toolbar/simple_toolbar.dart';
 export 'src/toolbar/structs/link_dialog_action.dart';
 export 'src/toolbar/theme/quill_dialog_theme.dart';
 export 'src/toolbar/theme/quill_icon_theme.dart';
+export 'src/toolbar/buttons/color/minimal_color_button.dart';

@@ -13,9 +13,11 @@ import '../../../editor_toolbar_shared/color.dart';
 import '../../editor.dart';
 import '../../embed/embed_editor_builder.dart';
 import '../../raw_editor/builders/leading_block_builder.dart';
+import '../../raw_editor/custom_qa_render.dart';
 import '../box.dart';
 import '../cursor.dart';
 import '../default_leading_components/leading_components.dart';
+
 import '../default_styles.dart';
 import '../delegate.dart';
 import '../link.dart';
@@ -140,6 +142,11 @@ class EditableTextBlock extends StatelessWidget {
   BoxDecoration? _getDecorationForBlock(
       Block node, DefaultStyles? defaultStyles) {
     final attrs = block.style.attributes;
+
+    if (attrs.containsKey(Attribute.qaBlock.key)) {
+      return defaultStyles!.qaBlock!.decoration;  // Add QA block decoration
+    }
+
     if (attrs.containsKey(Attribute.blockQuote.key)) {
       // Verify if the direction is RTL and avoid passing the decoration
       // to the left when need to be on right side
@@ -175,7 +182,7 @@ class EditableTextBlock extends StatelessWidget {
     var index = 0;
     for (final line in Iterable.castFrom<dynamic, Line>(block.children)) {
       index++;
-      final editableTextLine = EditableTextLine(
+      Widget editableTextLine = EditableTextLine(
         line,
         _buildLeading(
           context: context,
@@ -218,6 +225,53 @@ class EditableTextBlock extends StatelessWidget {
         ),
       );
     }
+
+    // if (line.style.containsKey(Attribute.qaBlock.key)) {
+    //   children.add(
+    //     Directionality(
+    //       textDirection: nodeTextDirection,
+    //       child: Container(
+    //         padding: EdgeInsets.symmetric(vertical: 8.0),
+    //         decoration: BoxDecoration(
+    //           color: Colors.grey.withOpacity(0.1),
+    //           border: Border.all(color: Colors.grey.withOpacity(0.2)),
+    //           borderRadius: BorderRadius.circular(8.0),
+    //         ),
+    //         child: Column(
+    //           children: [
+    //             QABlockSeparator(), // Custom widget for separator
+    //             EditableTextLine(
+    //               line,
+    //               null,
+    //               TextLine(
+    //                 line: line,
+    //                 textDirection: textDirection,
+    //                 embedBuilder: embedBuilder,
+    //                 customStyleBuilder: customStyleBuilder,
+    //                 styles: styles!,
+    //                 readOnly: readOnly,
+    //                 controller: controller,
+    //                 linkActionPicker: linkActionPicker,
+    //                 onLaunchUrl: onLaunchUrl,
+    //                 customLinkPrefixes: customLinkPrefixes,
+    //               ),
+    //               _getIndentWidth(context, count),
+    //               _getSpacingForLine(line, index, count, defaultStyles),
+    //               textDirection,
+    //               textSelection,
+    //               color,
+    //               enableInteractiveSelection,
+    //               hasFocus,
+    //               MediaQuery.devicePixelRatioOf(context),
+    //               cursorCont,
+    //             ),
+    //           ],
+    //         ),
+    //       ),
+    //     ),
+    //   );
+    // }
+
     return children.toList(growable: false);
   }
 

@@ -56,6 +56,7 @@ class Attribute<T> {
     Attribute.script.key: Attribute.script,
     Attribute.image.key: Attribute.image,
     Attribute.video.key: Attribute.video,
+    Attribute.qaBlock.key: Attribute.qaBlock,
   });
 
   static const BoldAttribute bold = BoldAttribute();
@@ -101,7 +102,7 @@ class Attribute<T> {
   static const CodeBlockAttribute codeBlock = CodeBlockAttribute();
 
   static const BlockQuoteAttribute blockQuote = BlockQuoteAttribute();
-
+  static const QABlockAttribute qaBlock = QABlockAttribute('qa');
   static const DirectionAttribute direction = DirectionAttribute(null);
 
   static const WidthAttribute width = WidthAttribute(null);
@@ -133,6 +134,7 @@ class Attribute<T> {
     Attribute.background.key,
     Attribute.placeholder.key,
     Attribute.font.key,
+    Attribute.qaBlock.key,
     Attribute.size.key,
     Attribute.inlineCode.key,
   });
@@ -150,9 +152,11 @@ class Attribute<T> {
     Attribute.list.key,
     Attribute.codeBlock.key,
     Attribute.blockQuote.key,
+    Attribute.qaBlock.key,
     Attribute.indent.key,
     Attribute.direction.key,
     Attribute.lineHeight.key,
+    Attribute.qaBlock.key,
   });
 
   static final Set<String> blockKeysExceptHeader = LinkedHashSet.of({
@@ -362,6 +366,11 @@ class AlignAttribute extends Attribute<String?> {
 
 class ListAttribute extends Attribute<String?> {
   const ListAttribute(String? val) : super('list', AttributeScope.block, val);
+}
+
+class QABlockAttribute extends Attribute<String?> {
+  const QABlockAttribute(String? val)
+      : super('qa-block', AttributeScope.block, val);
 }
 
 class CodeBlockAttribute extends Attribute<bool> {
