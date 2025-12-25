@@ -7,6 +7,11 @@ import '../../document/attribute.dart';
 import '../../document/nodes/node.dart';
 import '../../l10n/extensions/localizations_ext.dart';
 
+@Deprecated(
+  'Moved to LinkValidator.linkPrefixes but no longer available with the public'
+  'API. The item `http` has been removed and replaced with `http://` and `https://`.',
+)
+@internal
 const linkPrefixes = [
   'mailto:', // email
   'tel:', // telephone
