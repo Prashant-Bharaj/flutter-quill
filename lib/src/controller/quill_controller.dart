@@ -13,6 +13,8 @@ import '../document/attribute.dart';
 import '../document/document.dart';
 import '../document/nodes/embeddable.dart';
 import '../document/nodes/leaf.dart';
+import '../document/nodes/line.dart';
+import '../document/nodes/block.dart';
 import '../document/structs/doc_change.dart';
 import '../document/style.dart';
 import '../editor/config/editor_config.dart';
@@ -731,5 +733,79 @@ class QuillController extends ChangeNotifier {
       sb.write(text[i]);
     }
     return sb.toString();
+  }
+
+  /// Update an embed node's data at the specified offset
+  /// 
+  /// This method finds the embed at the given offset and updates its data
+  /// by replacing it with the new embed data. This is more efficient than
+  /// manually searching through deltas.
+  /// 
+  /// Returns true if the embed was found and updated, false otherwise.
+  bool updateEmbedData(int offset, Embeddable newEmbedData) {
+    final segmentResult = document.querySegmentLeafNode(offset);
+    final leaf = segmentResult.leaf;
+    
+    if (leaf == null || leaf.value is! Embeddable) {
+      return false;
+    }
+    
+    // Use replaceText to update the embed
+    replaceText(offset, 1, newEmbedData, selection);
+    return true;
+  }
+
+  /// Update an embed by finding it using a predicate function
+  /// 
+  /// The [predicate] function receives the embed node and its document offset,
+  /// and should return true if this is the embed we want to update.
+  /// 
+  /// Returns true if the embed was found and updated, false otherwise.
+  bool updateEmbedByPredicate(
+    bool Function(Embed node, int offset) predicate,
+    Embeddable newEmbedData,
+  ) {
+    final result = _findEmbed(predicate);
+    if (result == null) {
+      return false;
+    }
+    
+    replaceText(result.offset, 1, newEmbedData, selection);
+    return true;
+  }
+
+  /// Internal helper to find an embed using a predicate
+  ({Embed node, int offset})? _findEmbed(
+    bool Function(Embed node, int offset) predicate,
+  ) {
+    // Use documentOffset property from the embed node directly
+    // Traverse through all lines in the document
+    for (final rootNode in document.root.children) {
+      if (rootNode is Line) {
+        // Direct line in root
+        for (final child in rootNode.children) {
+          if (child is Embed) {
+            final docOffset = child.documentOffset;
+            if (predicate(child, docOffset)) {
+              return (node: child, offset: docOffset);
+            }
+          }
+        }
+      } else if (rootNode is Block) {
+        // Block contains multiple lines - use Iterable.castFrom like Document.search does
+        final block = rootNode;
+        for (final line in Iterable.castFrom<dynamic, Line>(block.children)) {
+          for (final child in line.children) {
+            if (child is Embed) {
+              final docOffset = child.documentOffset;
+              if (predicate(child, docOffset)) {
+                return (node: child, offset: docOffset);
+              }
+            }
+          }
+        }
+      }
+    }
+    return null;
   }
 }
